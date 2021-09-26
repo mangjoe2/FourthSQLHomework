@@ -1,0 +1,212 @@
+--function
+CREATE FUNCTION GetTotalRevenue(@price money, @discount smallint, @quantity int)
+returns money
+AS
+BEGIN
+DECLARE @revenue money
+SET @revenue = @price * (1 - @discount) * @quantity
+RETURN @revenue
+END
+
+SELECT UnitPrice, Discount, Quantity, dbo.GetTotalRevenue(UnitPrice, Discount, Quantity) AS TotalRevenue
+FROM [Order Details]
+
+--function to return a table
+CREATE FUNCTION ExpensiveProduct(@threshold money)
+RETURNS TABLE
+AS
+RETURN 
+SELECT *
+FROM Products 
+WHERE UnitPrice > @threshold
+
+SELECT * FROM dbo.ExpensiveProduct(10)
+
+--stored procedure vs. function
+--1. usage: SP used for DML; function for calculations
+--2. how to call: SP must be called by its name, Function insisde SELECT/FROM statemtn
+--3. input: SP may or maynot take input, function must have input
+--4. output: SP may or maynot have output, function must return some values
+--5. SP can call functions, but functions cannot call SP
+
+--triggers
+
+--contraints: restrictions we set for the columns 
+DROP TABLE Employee
+
+CREATE TABLE Employee(
+Id int,
+EName varchar(20),
+Age int
+)
+
+SELECT *
+FROM Employee
+
+INSERT INTO Employee
+VALUES(1, 'Sam', 35)
+
+INSERT INTO Employee
+VALUES(NULL, NULL, NULL)
+
+DROP TABLE Employee
+
+CREATE TABLE Employee(
+Id int NOT NULL,
+EName varchar(20) NOT NULL,
+Age int
+)
+
+
+CREATE TABLE Employee(
+Id int UNIQUE,
+EName varchar(20) NOT NULL,
+Age int
+)
+
+SELECT *
+FROM Employee
+
+INSERT INTO Employee
+VALUES(1, 'Sam', 35)
+
+INSERT INTO Employee
+VALUES(2, 'Laura', 39)
+
+INSERT INTO Employee
+VALUES(NULL, 'Fiona', NULL)
+
+--primary key = unique + not null
+DROP TABLE Employee
+CREATE TABLE Employee(
+Id int PRIMARY KEY,
+EName varchar(20) NOT NULL,
+Age int
+)
+
+SELECT *
+FROM Employee
+
+INSERT INTO Employee
+VALUES(1, 'Sam', 35)
+
+INSERT INTO Employee
+VALUES(2, 'Laura', 39)
+
+INSERT INTO Employee
+VALUES(NULL, 'Fiona', NULL)
+
+--Primary key vs. Unique:
+--1. Unique can accept one and only one null. but pk doesn't accept any null
+--2. One table can have multiple columns set with unique constraints, but only one pk
+--3. pk will sort the data by default, but unique will not
+SELECT *
+FROM Employee
+
+TRUNCATE TABLE Employee
+
+INSERT INTO Employee
+VALUES(4, 'Fred', 45)
+
+INSERT INTO Employee
+VALUES(1, 'Laura', 34)
+
+INSERT INTO Employee
+VALUES(3, 'Peter', 19)
+
+INSERT INTO Employee
+VALUES(2, 'Stella', 24)
+--4. PK will by default create clustered index, while unique key will create non-clustered index
+
+INSERT INTO Employee
+VALUES(5, 'Monster', 3000)
+
+INSERT INTO Employee
+VALUES(6, 'Weird', -34)
+
+--18-60
+DROP TABLE Employee
+CREATE TABLE Employee(
+Id INT PRIMARY KEY,
+EName VARCHAR(20) NOT NULL,
+Age INT CHECK(Age BETWEEN 18 AND 60)
+)
+
+--IDENTITY
+
+DROP TABLE pRODUCT
+CREATE TABLE Product(
+Id int Primary key IDENTITY(1,3),
+ProductName Varchar(20) NOT NULL,
+UnitPrice Money
+)
+
+INSERT INTO Product VALUES('Green Tea', 2)
+INSERT INTO Product VALUES('Latte', 3)
+INSERT INTO Product VALUES('Cold Brew', 4)
+
+SELECT *
+FROM Product
+
+--Referential integrity: build and maintain logical relationships between tables -> avoid logical corruptions of data
+
+CREATE TABLE Department
+(Id int primary key, DName varchar(20), Loc varchar(20))
+
+SELECT *
+FROM Department
+
+DROP TABLE Employee
+
+CREATE TABLE Employee
+(Id int primary key, EName varchar(20) NOT NULL, Salary money, 
+DeptId int FOREIGN KEY REFERENCES Department(Id))
+
+SELECT *
+FROM Department
+
+SELECT *
+FROM Employee
+
+
+INSERT INTO Department VALUES(1, 'IT', 'VA')
+INSERT INTO Department VALUES(2, 'HR', 'TX')
+INSERT INTO Department VALUES(3, 'Marketing', 'CA')
+
+INSERT INTO Employee VALUES(1, 'Fred', 8000, 1)
+INSERT INTO Employee VALUES(2, 'Peter', 19, 3)
+
+DELETE FROM Department
+WHERE Id = 1
+
+SELECT *
+FROM Department
+
+SELECT *
+FROM Employee
+
+DROP TABLE Employee
+DROP TABLE Department
+
+CREATE TABLE Department
+(Id INT PRIMARY KEY,
+DName VARCHAR(20) NOT NULL,
+Loc VARCHAR(20))
+
+CREATE TABLE Employee(EId int primary key, FullName varchar(30), Salary decimal(6,2), 
+DeptId int FOREIGN KEY REFERENCES Department(Id) on delete cascade) 
+
+DELETE FROM Department
+WHERE Id = 1
+
+CREATE TABLE Department
+(Id INT PRIMARY KEY,
+DName VARCHAR(20) NOT NULL,
+Loc VARCHAR(20))
+
+
+CREATE TABLE Employee(EId int primary key, FullName varchar(30), Salary decimal(6,2), 
+DeptId int FOREIGN KEY REFERENCES Department(Id) on delete set null) 
+
+DELETE FROM Department
+WHERE Id = 1
